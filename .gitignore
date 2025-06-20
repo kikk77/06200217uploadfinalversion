@@ -121,11 +121,11 @@ Desktop.ini
 *.swp
 *.swo
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-marketing_bot.db
+# Database files - 注释掉以便推送初始数据库到生产环境
+# *.db
+# *.sqlite
+# *.sqlite3
+# marketing_bot.db
 
 # Logs
 logs

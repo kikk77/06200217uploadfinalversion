@@ -16,11 +16,11 @@ yarn-error.log*
 logs/
 bot.log
 
-# 数据库文件
-*.db
-*.db-shm
-*.db-wal
-data/
+# 数据库文件 - 注释掉以便推送初始数据库到生产环境
+# *.db
+# *.db-shm  
+# *.db-wal
+# data/
 
 # 临时文件
 tmp/
