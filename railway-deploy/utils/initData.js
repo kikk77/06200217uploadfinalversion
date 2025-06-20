@@ -46,13 +46,13 @@ function initTestData() {
 
         // 清空所有测试数据
         console.log('🧹 清理测试数据...');
-        db.prepare('DELETE FROM bind_codes').run();
-        db.prepare('DELETE FROM merchants').run();
+            db.prepare('DELETE FROM bind_codes').run();
+            db.prepare('DELETE FROM merchants').run();
         db.prepare('DELETE FROM orders').run();
         db.prepare('DELETE FROM booking_sessions').run();
         db.prepare('DELETE FROM evaluations').run();
         console.log('✅ 测试数据清理完成');
-
+        
         // 重新启用外键约束
         db.pragma('foreign_keys = ON');
         
