@@ -18,13 +18,13 @@ ENV PYTHON=/usr/bin/python3
 WORKDIR /app
 
 # 复制package文件
-COPY package*.json ./
+COPY railway-deploy/package*.json ./
 
 # 安装依赖
 RUN npm install --only=production
 
 # 复制源代码
-COPY . .
+COPY railway-deploy/ .
 
 # 创建数据目录
 RUN mkdir -p data
