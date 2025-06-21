@@ -8,7 +8,23 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 // 初始化Telegram Bot
 let bot;
 try {
-    bot = new TelegramBot(BOT_TOKEN, { polling: true });
+    // 配置Bot选项，避免IP连接问题
+    const botOptions = { 
+        polling: true,
+        // 添加请求选项来提高连接稳定性
+        request: {
+            // 增加超时时间
+            timeout: 60000,
+            // 启用keep-alive
+            forever: true,
+            // 允许重试
+            pool: {
+                maxSockets: 10
+            }
+        }
+    };
+    
+    bot = new TelegramBot(BOT_TOKEN, botOptions);
     console.log('✅ Telegram Bot初始化成功');
     
     // 添加错误事件监听
@@ -23,6 +39,8 @@ try {
         console.error('❌ Telegram Bot轮询错误:', error.message);
         if (error.message.includes('ENOTFOUND')) {
             console.log('⚠️ 网络连接问题，Bot将自动重试连接');
+        } else if (error.message.includes('ETIMEDOUT')) {
+            console.log('⚠️ 连接超时，Bot将自动重试连接');
         }
     });
     
@@ -1051,7 +1069,7 @@ function initBotHandlers() {
                     }
                 };
                 
-                await bot.sendMessage(chatId, '👨‍🏫 请输入您的老师名称：', options);
+                bot.sendMessage(chatId, '👨‍🏫 请输入您的老师名称：', options);
             }
             return;
         }
@@ -3407,7 +3425,12 @@ async function handleRealBroadcast(userId, evaluationId, query) {
         console.log(`播报消息内容:`, broadcastMessage);
 
         // 发送到群组播报
-        const GROUP_CHAT_ID = process.env.GROUP_CHAT_ID || '-1002793326688';
+        const GROUP_CHAT_ID = process.env.GROUP_CHAT_ID;
+        if (!GROUP_CHAT_ID) {
+            console.error('❌ GROUP_CHAT_ID 环境变量未设置');
+            await sendMessageWithoutDelete(userId, '❌ 播报失败：群组配置未设置，请联系管理员。', {}, 'broadcast_error');
+            return;
+        }
         console.log(`目标群组ID: ${GROUP_CHAT_ID}`);
         
         try {
@@ -3499,7 +3522,12 @@ async function handleAnonymousBroadcast(userId, evaluationId, query) {
         console.log(`播报消息内容:`, broadcastMessage);
 
         // 发送到群组播报
-        const GROUP_CHAT_ID = process.env.GROUP_CHAT_ID || '-1002793326688';
+        const GROUP_CHAT_ID = process.env.GROUP_CHAT_ID;
+        if (!GROUP_CHAT_ID) {
+            console.error('❌ GROUP_CHAT_ID 环境变量未设置');
+            await sendMessageWithoutDelete(userId, '❌ 播报失败：群组配置未设置，请联系管理员。', {}, 'broadcast_error');
+            return;
+        }
         console.log(`目标群组ID: ${GROUP_CHAT_ID}`);
         
         try {
@@ -4300,18 +4328,8 @@ async function getBotUsername() {
         console.error('❌ 动态获取Bot用户名失败:', error);
     }
     
-    // 根据环境选择默认值
-    const nodeEnv = process.env.NODE_ENV || 'development';
-    if (nodeEnv === 'production') {
-        cachedBotUsername = 'xiaojisystembot'; // Railway生产环境
-    } else if (nodeEnv === 'staging') {
-        cachedBotUsername = 'xiaoji_daniao_bot'; // 测试环境
-    } else {
-        cachedBotUsername = 'xiaojisystembot'; // 开发环境默认
-    }
-    
-    console.log(`⚠️ 使用环境默认Bot用户名 (${nodeEnv}): ${cachedBotUsername}`);
-    return cachedBotUsername;
+    // 如果所有方法都失败，抛出错误
+    throw new Error('无法获取Bot用户名：请设置BOT_USERNAME环境变量或确保Bot可用');
 }
 
 // 清除Bot用户名缓存（用于重新获取）

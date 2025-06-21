@@ -27,13 +27,13 @@
             <div class="filters">
                 <div class="filter-group">
                     <label>📅 时间范围:</label>
-                    <select id="timeRange" onchange="updateDashboard()">
+                    <select id="timeRange">
                         <option value="本日">🗓️ 本日</option>
                         <option value="本周">📆 本周</option>
-                        <option value="本月" selected>📅 本月</option>
+                        <option value="本月">📅 本月</option>
                         <option value="本季度">📊 本季度</option>
                         <option value="本年">📈 本年</option>
-                        <option value="全部">🌐 全部时间</option>
+                        <option value="全部" selected>🌐 全部时间</option>
                         <option value="custom">📋 自定义</option>
                     </select>
                 </div>
@@ -47,14 +47,14 @@
                 
                 <div class="filter-group">
                     <label>地区:</label>
-                    <select id="regionFilter" onchange="updateDashboard()">
+                    <select id="regionFilter">
                         <option value="">全部地区</option>
                     </select>
                 </div>
                 
                 <div class="filter-group">
                     <label>价格区间:</label>
-                    <select id="priceRangeFilter" onchange="updateDashboard()">
+                    <select id="priceRangeFilter">
                         <option value="">全部价格</option>
                         <option value="0-500">0-500</option>
                         <option value="500-1000">500-1000</option>
@@ -65,7 +65,7 @@
                 
                 <div class="filter-group">
                     <label>商家:</label>
-                    <select id="merchantFilter" onchange="updateDashboard()">
+                    <select id="merchantFilter">
                         <option value="">全部商家</option>
                     </select>
                 </div>
@@ -184,10 +184,10 @@
             <div class="section-header">
                 <h2>📋 订单列表</h2>
                 <div class="section-actions">
-                    <input type="text" id="searchInput" placeholder="搜索订单号、用户名、商家名..." onkeyup="searchOrders()">
-                    <button class="btn btn-secondary" onclick="showAdvancedFilters()">🔍 高级筛选</button>
-                    <button class="btn btn-refresh" onclick="refreshAllData()" title="刷新数据">🔄 刷新数据</button>
-                    <button class="btn btn-export" onclick="showExportModal()" title="导出数据">📦 导出数据</button>
+                    <input type="text" id="searchInput" placeholder="搜索订单号、用户名、商家名..." onkeyup="window.ordersManager.searchOrders(this.value)">
+                    <button class="btn btn-secondary" onclick="window.ordersManager.showAdvancedFilters()">🔍 高级筛选</button>
+                    <button class="btn btn-refresh" onclick="window.ordersManager.refreshAllData()" title="刷新数据">🔄 刷新数据</button>
+                    <button class="btn btn-export" onclick="window.ordersManager.showExportModal()" title="导出数据">📦 导出数据</button>
                 </div>
             </div>
 
@@ -195,40 +195,103 @@
             <div id="advancedFilters" class="advanced-filters" style="display: none;">
                 <div class="filter-row">
                     <div class="filter-item">
-                        <label>订单状态:</label>
+                        <label>🔍 全文搜索:</label>
+                        <input type="text" id="globalSearchInput" placeholder="搜索订单号、用户名、商家名、价格...">
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label>📋 订单号:</label>
+                        <input type="text" id="orderIdFilter" placeholder="精确订单号">
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label>👤 用户名:</label>
+                        <input type="text" id="userNameFilter" placeholder="用户名或昵称">
+                    </div>
+                </div>
+                
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label>👩‍🏫 商家名:</label>
+                        <input type="text" id="merchantNameFilter" placeholder="商家名或老师名">
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label>📊 订单状态:</label>
                         <select id="statusFilter">
                             <option value="">全部状态</option>
-                            <option value="attempting">尝试预约</option>
-                            <option value="pending">待确认</option>
-                            <option value="confirmed">已确认</option>
-                            <option value="completed">已完成</option>
-                            <option value="incomplete">未完成</option>
-                            <option value="failed">预约失败</option>
-                            <option value="cancelled">已取消</option>
+                            <option value="attempting">🔄 尝试预约</option>
+                            <option value="pending">⏳ 待确认</option>
+                            <option value="confirmed">✅ 已确认</option>
+                            <option value="completed">🎉 已完成</option>
+                            <option value="incomplete">❌ 未完成</option>
+                            <option value="failed">💔 预约失败</option>
+                            <option value="cancelled">🚫 已取消</option>
                         </select>
                     </div>
                     
                     <div class="filter-item">
-                        <label>课程类型:</label>
+                        <label>📚 课程类型:</label>
                         <select id="courseTypeFilter">
                             <option value="">全部类型</option>
                             <option value="p">p课程</option>
                             <option value="pp">pp课程</option>
-                            <option value="other">其他时长</option>
+                            <option value="其他时长">其他时长</option>
+                            <option value="待确定课程">待确定课程</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label>⭐ 评价状态:</label>
+                        <select id="evaluationStatusFilter">
+                            <option value="">全部评价状态</option>
+                            <option value="user_completed">用户已评价</option>
+                            <option value="user_pending">用户未评价</option>
+                            <option value="merchant_completed">商家已评价</option>
+                            <option value="merchant_pending">商家未评价</option>
+                            <option value="all_completed">双方已评价</option>
+                            <option value="none_completed">双方未评价</option>
                         </select>
                     </div>
                     
                     <div class="filter-item">
-                        <label>创建时间:</label>
-                        <input type="date" id="orderDateFrom">
-                        <span>至</span>
-                        <input type="date" id="orderDateTo">
+                        <label>🌍 地区:</label>
+                        <select id="regionFilterAdvanced">
+                            <option value="">全部地区</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label>💰 价格范围:</label>
+                        <div class="price-range-inputs">
+                            <input type="number" id="minPriceFilter" placeholder="最低价格" min="0" step="50">
+                            <span>至</span>
+                            <input type="number" id="maxPriceFilter" placeholder="最高价格" min="0" step="50">
+                        </div>
                     </div>
                 </div>
                 
-                <div class="filter-actions">
-                    <button class="btn btn-primary" onclick="applyAdvancedFilters()">应用筛选</button>
-                    <button class="btn btn-secondary" onclick="clearAdvancedFilters()">清除筛选</button>
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label>📅 创建时间:</label>
+                        <div class="date-range-inputs">
+                            <input type="date" id="orderDateFrom">
+                            <span>至</span>
+                            <input type="date" id="orderDateTo">
+                        </div>
+                    </div>
+                    
+                    <div class="filter-item filter-actions-item">
+                        <button class="btn btn-primary" onclick="window.ordersManager.applyAdvancedFilters()">🔍 应用筛选</button>
+                        <button class="btn btn-secondary" onclick="window.ordersManager.clearAdvancedFilters()">🔄 清除筛选</button>
+                        <button class="btn btn-success" onclick="window.ordersManager.refreshOrdersData()">⚡ 刷新数据</button>
+                    </div>
+                </div>
+                
+                <div class="filter-status-row">
+                    <div class="filter-status" id="filterStatus"></div>
                 </div>
             </div>
 
@@ -256,9 +319,9 @@
 
             <!-- 分页 -->
             <div class="pagination">
-                <button class="btn btn-secondary" id="prevPage" onclick="changePage(-1)">上一页</button>
+                <button class="btn btn-secondary" id="prevPage" onclick="window.ordersManager.changePage(-1)">上一页</button>
                 <span id="pageInfo">第 1 页，共 1 页</span>
-                <button class="btn btn-secondary" id="nextPage" onclick="changePage(1)">下一页</button>
+                <button class="btn btn-secondary" id="nextPage" onclick="window.ordersManager.changePage(1)">下一页</button>
             </div>
         </section>
 

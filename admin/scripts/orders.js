@@ -35,11 +35,10 @@ class OptimizedOrdersManager {
     }
 
     init() {
-        this.setupVirtualScroll();
         this.setupEventListeners();
         this.loadInitialData();
         
-        // 直接加载所有图表，不使用懒加载
+        // 延迟加载图表以避免阻塞页面渲染
         setTimeout(() => {
             console.log('开始加载所有图表...');
             this.loadAllCharts();
@@ -181,17 +180,156 @@ class OptimizedOrdersManager {
 
     // 设置事件监听器
     setupEventListeners() {
-        // 时间范围变化
-        document.getElementById('timeRange').addEventListener('change', (e) => {
-            this.handleTimeRangeChange(e.target.value);
-        });
+        // 基础筛选器事件监听
+        const timeRange = document.getElementById('timeRange');
+        if (timeRange) {
+            timeRange.addEventListener('change', (e) => {
+                this.handleTimeRangeChange(e.target.value);
+            });
+        }
 
-        // 搜索防抖
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            this.debounce(() => {
-                this.searchOrders(e.target.value);
-            }, 300)();
-        });
+        const regionFilter = document.getElementById('regionFilter');
+        if (regionFilter) {
+            regionFilter.addEventListener('change', () => {
+                this.applyFiltersAndRefresh();
+            });
+        }
+
+        const priceRangeFilter = document.getElementById('priceRangeFilter');
+        if (priceRangeFilter) {
+            priceRangeFilter.addEventListener('change', () => {
+                this.applyFiltersAndRefresh();
+            });
+        }
+
+        const merchantFilter = document.getElementById('merchantFilter');
+        if (merchantFilter) {
+            merchantFilter.addEventListener('change', () => {
+                this.applyFiltersAndRefresh();
+            });
+        }
+
+        // 搜索输入防抖
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.debounce(() => {
+                    this.searchOrders(e.target.value);
+                }, 300)();
+            });
+        }
+
+        // 高级筛选器事件监听
+        const globalSearchInput = document.getElementById('globalSearchInput');
+        if (globalSearchInput) {
+            globalSearchInput.addEventListener('input', (e) => {
+                this.debounce(() => {
+                    this.applyAdvancedFilters();
+                }, 500)();
+            });
+        }
+
+        const orderIdFilter = document.getElementById('orderIdFilter');
+        if (orderIdFilter) {
+            orderIdFilter.addEventListener('input', (e) => {
+                this.debounce(() => {
+                    this.applyAdvancedFilters();
+                }, 500)();
+            });
+        }
+
+        const userNameFilter = document.getElementById('userNameFilter');
+        if (userNameFilter) {
+            userNameFilter.addEventListener('input', (e) => {
+                this.debounce(() => {
+                    this.applyAdvancedFilters();
+                }, 500)();
+            });
+        }
+
+        const merchantNameFilter = document.getElementById('merchantNameFilter');
+        if (merchantNameFilter) {
+            merchantNameFilter.addEventListener('input', (e) => {
+                this.debounce(() => {
+                    this.applyAdvancedFilters();
+                }, 500)();
+            });
+        }
+
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', () => {
+                this.applyAdvancedFilters();
+            });
+        }
+
+        const courseTypeFilter = document.getElementById('courseTypeFilter');
+        if (courseTypeFilter) {
+            courseTypeFilter.addEventListener('change', () => {
+                this.applyAdvancedFilters();
+            });
+        }
+
+        const evaluationStatusFilter = document.getElementById('evaluationStatusFilter');
+        if (evaluationStatusFilter) {
+            evaluationStatusFilter.addEventListener('change', () => {
+                this.applyAdvancedFilters();
+            });
+        }
+
+        const minPriceFilter = document.getElementById('minPriceFilter');
+        if (minPriceFilter) {
+            minPriceFilter.addEventListener('input', (e) => {
+                this.debounce(() => {
+                    this.applyAdvancedFilters();
+                }, 500)();
+            });
+        }
+
+        const maxPriceFilter = document.getElementById('maxPriceFilter');
+        if (maxPriceFilter) {
+            maxPriceFilter.addEventListener('input', (e) => {
+                this.debounce(() => {
+                    this.applyAdvancedFilters();
+                }, 500)();
+            });
+        }
+
+        const orderDateFrom = document.getElementById('orderDateFrom');
+        if (orderDateFrom) {
+            orderDateFrom.addEventListener('change', () => {
+                this.applyAdvancedFilters();
+            });
+        }
+
+        const orderDateTo = document.getElementById('orderDateTo');
+        if (orderDateTo) {
+            orderDateTo.addEventListener('change', () => {
+                this.applyAdvancedFilters();
+            });
+        }
+
+        const regionFilterAdvanced = document.getElementById('regionFilterAdvanced');
+        if (regionFilterAdvanced) {
+            regionFilterAdvanced.addEventListener('change', () => {
+                this.applyAdvancedFilters();
+            });
+        }
+
+        // 自定义日期范围
+        const dateFrom = document.getElementById('dateFrom');
+        if (dateFrom) {
+            dateFrom.addEventListener('change', () => {
+                this.applyFiltersAndRefresh();
+            });
+        }
+
+        const dateTo = document.getElementById('dateTo');
+        if (dateTo) {
+            dateTo.addEventListener('change', () => {
+                this.applyFiltersAndRefresh();
+            });
+        }
 
         // 窗口大小变化时重新计算虚拟滚动
         window.addEventListener('resize', this.debounce(() => {
@@ -204,6 +342,20 @@ class OptimizedOrdersManager {
                 this.refreshStaleData();
             }
         });
+    }
+
+    // 应用筛选并刷新数据
+    async applyFiltersAndRefresh() {
+        try {
+            this.currentPage = 1; // 重置页码
+            await Promise.all([
+                this.updateDashboard(),
+                this.loadOrders(1, false)
+            ]);
+        } catch (error) {
+            console.error('应用筛选失败:', error);
+            this.showError('应用筛选失败: ' + error.message);
+        }
     }
 
     // 防抖函数
@@ -419,11 +571,11 @@ class OptimizedOrdersManager {
             case 'ordersChart':
                 const datasets = [{
                     label: '总订单数',
-                    data: data.values || [],
-                    borderColor: '#4f46e5',
-                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                    fill: true,
-                    tension: 0.4
+                            data: data.values || [],
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            fill: true,
+                            tension: 0.4
                 }];
                 
                 // 如果有已完成订单数据，添加第二个数据集
@@ -554,8 +706,8 @@ class OptimizedOrdersManager {
                 this.totalPages = Math.ceil(this.totalOrders / this.pageSize);
                 this.currentPage = page;
                 
-                // 更新虚拟滚动
-                this.updateVirtualScroll();
+                // 渲染订单到表格
+                this.renderOrdersTable();
                 
                 // 更新分页信息
                 this.updatePaginationInfo();
@@ -567,6 +719,78 @@ class OptimizedOrdersManager {
         } catch (error) {
             console.error('加载订单失败:', error);
             this.showError('加载订单失败: ' + error.message);
+            
+            // 如果加载失败，显示空表格
+            this.renderEmptyTable();
+        }
+    }
+
+    // 渲染订单表格
+    renderOrdersTable() {
+        const tbody = document.getElementById('ordersTableBody');
+        if (!tbody) {
+            console.error('找不到ordersTableBody元素');
+            return;
+        }
+
+        // 清空现有内容
+        tbody.innerHTML = '';
+
+        if (!this.ordersData || this.ordersData.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 2rem; color: #6c757d;">
+                        📭 暂无订单数据
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // 渲染每个订单
+        this.ordersData.forEach(order => {
+            const row = this.createOrderTableRow(order);
+            tbody.appendChild(row);
+        });
+
+        console.log(`已渲染 ${this.ordersData.length} 条订单数据`);
+    }
+
+    // 创建订单表格行
+    createOrderTableRow(order) {
+        const row = document.createElement('tr');
+        row.className = 'order-row';
+        
+        row.innerHTML = `
+            <td>${order.order_number || '-'}</td>
+            <td>${order.user_name || order.username || '未知用户'}</td>
+            <td>${order.merchant_name || '未知商家'}</td>
+            <td>${order.course_content || '-'}</td>
+            <td>${typeof order.actual_price === 'number' ? '¥' + order.actual_price : (order.actual_price || order.price || '未设置')}</td>
+            <td>
+                <span class="status-badge status-${order.status}">${this.getStatusText(order.status)}</span>
+            </td>
+            <td>${this.formatDate(order.created_at)}</td>
+            <td>${this.getEvaluationStatusDisplay(order)}</td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="ordersManager.showOrderDetails('${order.id}')">详情</button>
+            </td>
+        `;
+
+        return row;
+    }
+
+    // 渲染空表格
+    renderEmptyTable() {
+        const tbody = document.getElementById('ordersTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 2rem; color: #dc3545;">
+                        ❌ 加载订单数据失败，请刷新页面重试
+                    </td>
+                </tr>
+            `;
         }
     }
 
@@ -606,17 +830,56 @@ class OptimizedOrdersManager {
 
     // 获取当前筛选条件
     getCurrentFilters() {
-        return {
-            timeRange: document.getElementById('timeRange').value,
-            dateFrom: document.getElementById('dateFrom')?.value,
-            dateTo: document.getElementById('dateTo')?.value,
-            regionId: document.getElementById('regionFilter').value,
-            priceRange: document.getElementById('priceRangeFilter').value,
-            merchantId: document.getElementById('merchantFilter').value,
-            status: document.getElementById('statusFilter')?.value,
-            courseType: document.getElementById('courseTypeFilter')?.value,
-            search: document.getElementById('searchInput').value
-        };
+        const filters = {};
+
+        // 基础筛选条件
+        const timeRange = document.getElementById('timeRange')?.value;
+        const dateFrom = document.getElementById('dateFrom')?.value;
+        const dateTo = document.getElementById('dateTo')?.value;
+        const regionId = document.getElementById('regionFilter')?.value;
+        const priceRange = document.getElementById('priceRangeFilter')?.value;
+        const merchantId = document.getElementById('merchantFilter')?.value;
+        const search = document.getElementById('searchInput')?.value;
+
+        // 高级筛选条件
+        const globalSearch = document.getElementById('globalSearchInput')?.value || '';
+        const orderId = document.getElementById('orderIdFilter')?.value || '';
+        const userName = document.getElementById('userNameFilter')?.value || '';
+        const merchantName = document.getElementById('merchantNameFilter')?.value || '';
+        const status = document.getElementById('statusFilter')?.value || '';
+        const courseType = document.getElementById('courseTypeFilter')?.value || '';
+        const evaluationStatus = document.getElementById('evaluationStatusFilter')?.value || '';
+        const minPrice = document.getElementById('minPriceFilter')?.value || '';
+        const maxPrice = document.getElementById('maxPriceFilter')?.value || '';
+        const orderDateFrom = document.getElementById('orderDateFrom')?.value || '';
+        const orderDateTo = document.getElementById('orderDateTo')?.value || '';
+        const regionAdvanced = document.getElementById('regionFilterAdvanced')?.value || '';
+
+        // 只添加非空的筛选条件
+        if (timeRange && timeRange !== '全部') filters.timeRange = timeRange;
+        if (dateFrom) filters.dateFrom = dateFrom;
+        if (dateTo) filters.dateTo = dateTo;
+        if (regionId) filters.regionId = regionId;
+        if (priceRange) filters.priceRange = priceRange;
+        if (merchantId) filters.merchantId = merchantId;
+        if (search) filters.search = search;
+        
+        // 高级筛选条件（优先级更高）
+        if (globalSearch) filters.search = globalSearch;
+        if (orderId) filters.orderId = orderId;
+        if (userName) filters.userName = userName;
+        if (merchantName) filters.merchantName = merchantName;
+        if (status) filters.status = status;
+        if (courseType) filters.courseType = courseType;
+        if (evaluationStatus) filters.evaluationStatus = evaluationStatus;
+        if (minPrice) filters.minPrice = parseFloat(minPrice);
+        if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
+        if (orderDateFrom) filters.dateFrom = orderDateFrom;
+        if (orderDateTo) filters.dateTo = orderDateTo;
+        if (regionAdvanced) filters.regionId = regionAdvanced;
+
+        console.log('当前筛选条件:', filters);
+        return filters;
     }
 
     // 更新仪表板
@@ -876,8 +1139,13 @@ class OptimizedOrdersManager {
     }
 
     async searchOrders(query) {
-        this.currentPage = 1;
-        await this.loadOrders();
+        try {
+            this.currentPage = 1;
+            await this.applyFiltersAndRefresh();
+        } catch (error) {
+            console.error('搜索订单失败:', error);
+            this.showError('搜索失败: ' + error.message);
+        }
     }
 
     async changePage(direction) {
@@ -911,7 +1179,34 @@ class OptimizedOrdersManager {
     }
 
     populateFilters(regions, merchants) {
-        // 实现筛选器填充逻辑
+        // 填充地区筛选器
+        const regionFilter = document.getElementById('regionFilter');
+        if (regionFilter && regions && regions.data) {
+            regionFilter.innerHTML = '<option value="">全部地区</option>';
+            regions.data.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region.id;
+                option.textContent = region.name;
+                regionFilter.appendChild(option);
+            });
+        }
+
+        // 填充商家筛选器
+        const merchantFilter = document.getElementById('merchantFilter');
+        if (merchantFilter && merchants && merchants.data) {
+            merchantFilter.innerHTML = '<option value="">全部商家</option>';
+            merchants.data.forEach(merchant => {
+                const option = document.createElement('option');
+                option.value = merchant.id;
+                option.textContent = merchant.teacher_name || merchant.username || `商家${merchant.id}`;
+                merchantFilter.appendChild(option);
+            });
+        }
+
+        console.log('筛选器填充完成:', {
+            regions: regions?.data?.length || 0,
+            merchants: merchants?.data?.length || 0
+        });
     }
 
     handleTimeRangeChange(value) {
@@ -921,22 +1216,21 @@ class OptimizedOrdersManager {
             customDateRange.style.display = value === 'custom' ? 'flex' : 'none';
         }
         
-        // 清除缓存
-        this.cache.clear();
-        
-        // 重新加载数据
-        this.loadOrders(1, false);
-        this.updateDashboard();
-        this.loadAllCharts();
+        // 应用筛选并刷新数据
+        this.applyFiltersAndRefresh();
     }
 
     // 重置筛选器
     resetFilters() {
-        document.getElementById('timeRange').value = '本月';
-        document.getElementById('regionFilter').value = '';
-        document.getElementById('priceRangeFilter').value = '';
-        document.getElementById('merchantFilter').value = '';
-        document.getElementById('searchInput').value = '';
+        document.getElementById('timeRange').value = '全部';
+        const regionFilter = document.getElementById('regionFilter');
+        if (regionFilter) regionFilter.value = '';
+        const priceRangeFilter = document.getElementById('priceRangeFilter');
+        if (priceRangeFilter) priceRangeFilter.value = '';
+        const merchantFilter = document.getElementById('merchantFilter');
+        if (merchantFilter) merchantFilter.value = '';
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
         
         // 隐藏自定义日期范围
         const customDateRange = document.getElementById('customDateRange');
@@ -944,11 +1238,14 @@ class OptimizedOrdersManager {
             customDateRange.style.display = 'none';
         }
         
-        // 重新加载数据
-        this.cache.clear();
-        this.updateDashboard();
-        this.loadOrders(1, false);
-        this.loadAllCharts();
+        // 清除自定义日期
+        const dateFrom = document.getElementById('dateFrom');
+        const dateTo = document.getElementById('dateTo');
+        if (dateFrom) dateFrom.value = '';
+        if (dateTo) dateTo.value = '';
+        
+        // 应用筛选并刷新数据
+        this.applyFiltersAndRefresh();
     }
 
     // 立即刷新
@@ -1945,10 +2242,172 @@ class OptimizedOrdersManager {
             this.showLoading(false);
         }
     }
+
+    // 显示/隐藏高级筛选面板
+    showAdvancedFilters() {
+        const panel = document.getElementById('advancedFilters');
+        const isVisible = panel.style.display !== 'none';
+        panel.style.display = isVisible ? 'none' : 'block';
+        
+        // 如果首次显示，加载地区数据
+        if (!isVisible) {
+            this.loadRegionsForAdvancedFilter();
+        }
+    }
+
+    // 为高级筛选加载地区数据
+    async loadRegionsForAdvancedFilter() {
+        try {
+            const response = await fetch('/api/regions');
+            const result = await response.json();
+            
+            if (result.success) {
+                const select = document.getElementById('regionFilterAdvanced');
+                select.innerHTML = '<option value="">全部地区</option>';
+                
+                result.data.forEach(region => {
+                    const option = document.createElement('option');
+                    option.value = region.id;
+                    option.textContent = region.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('加载地区数据失败:', error);
+        }
+    }
+
+    // 应用高级筛选
+    async applyAdvancedFilters() {
+        try {
+            // 显示筛选状态
+            const statusDiv = document.getElementById('filterStatus');
+            statusDiv.innerHTML = '<span class="filter-applying">🔍 正在应用筛选...</span>';
+            
+            // 重置页码
+            this.currentPage = 1;
+            
+            // 重新加载数据
+            await Promise.all([
+                this.updateDashboard(),
+                this.loadOrders(1, false)
+            ]);
+            
+            // 显示筛选结果统计
+            this.showFilterStatus();
+            
+        } catch (error) {
+            console.error('应用筛选失败:', error);
+            this.showError('应用筛选失败: ' + error.message);
+        }
+    }
+
+    // 清除高级筛选
+    clearAdvancedFilters() {
+        // 清空所有筛选输入
+        document.getElementById('globalSearchInput').value = '';
+        document.getElementById('orderIdFilter').value = '';
+        document.getElementById('userNameFilter').value = '';
+        document.getElementById('merchantNameFilter').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('courseTypeFilter').value = '';
+        document.getElementById('evaluationStatusFilter').value = '';
+        document.getElementById('minPriceFilter').value = '';
+        document.getElementById('maxPriceFilter').value = '';
+        document.getElementById('orderDateFrom').value = '';
+        document.getElementById('orderDateTo').value = '';
+        document.getElementById('regionFilterAdvanced').value = '';
+        
+        // 清除筛选状态
+        document.getElementById('filterStatus').innerHTML = '';
+        
+        // 重新加载数据
+        this.applyAdvancedFilters();
+    }
+
+    // 显示筛选状态
+    showFilterStatus() {
+        const filters = this.getCurrentFilters();
+        const activeFilters = [];
+        
+        if (filters.search) activeFilters.push(`搜索: ${filters.search}`);
+        if (filters.orderId) activeFilters.push(`订单号: ${filters.orderId}`);
+        if (filters.userName) activeFilters.push(`用户: ${filters.userName}`);
+        if (filters.merchantName) activeFilters.push(`商家: ${filters.merchantName}`);
+        if (filters.status) activeFilters.push(`状态: ${this.getStatusText(filters.status)}`);
+        if (filters.courseType) activeFilters.push(`课程: ${filters.courseType}`);
+        if (filters.evaluationStatus) activeFilters.push(`评价: ${this.getEvaluationStatusText(filters.evaluationStatus)}`);
+        if (filters.minPrice || filters.maxPrice) {
+            const priceRange = `${filters.minPrice || 0} - ${filters.maxPrice || '∞'}`;
+            activeFilters.push(`价格: ¥${priceRange}`);
+        }
+        if (filters.dateFrom || filters.dateTo) {
+            const dateRange = `${filters.dateFrom || '开始'} ~ ${filters.dateTo || '现在'}`;
+            activeFilters.push(`时间: ${dateRange}`);
+        }
+        
+        const statusDiv = document.getElementById('filterStatus');
+        if (activeFilters.length > 0) {
+            statusDiv.innerHTML = `
+                <div class="filter-active">
+                    <span class="filter-count">✅ 已应用 ${activeFilters.length} 个筛选条件</span>
+                    <div class="filter-list">${activeFilters.join(' | ')}</div>
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = '<span class="filter-none">📋 未应用筛选条件</span>';
+        }
+    }
+
+    // 获取评价状态文本
+    getEvaluationStatusText(status) {
+        const statusMap = {
+            'user_completed': '用户已评价',
+            'user_pending': '用户未评价',
+            'merchant_completed': '商家已评价',
+            'merchant_pending': '商家未评价',
+            'all_completed': '双方已评价',
+            'none_completed': '双方未评价'
+        };
+        return statusMap[status] || status;
+    }
+
+    // 刷新订单数据（仅订单列表）
+    async refreshOrdersData() {
+        try {
+            const refreshBtn = document.querySelector('button[onclick="refreshOrdersData()"]');
+            const originalText = refreshBtn ? refreshBtn.innerHTML : '';
+            
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '⏳ 刷新中...';
+                refreshBtn.disabled = true;
+            }
+            
+            // 清除订单相关缓存
+            this.clearCache('orders');
+            
+            // 重新加载订单数据
+            await this.loadOrders(this.currentPage, false);
+            
+            this.showSuccessMessage('订单数据刷新完成！');
+            
+            if (refreshBtn) {
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.disabled = false;
+            }
+            
+        } catch (error) {
+            console.error('刷新订单数据失败:', error);
+            this.showError('刷新订单数据失败: ' + error.message);
+        }
+    }
 }
 
 // 初始化管理器
 const ordersManager = new OptimizedOrdersManager();
+
+// 设置全局访问
+window.ordersManager = ordersManager;
 
 // 全局方法（保持向后兼容）
 window.refreshData = () => ordersManager.refreshData();
@@ -1960,6 +2419,11 @@ window.showExportModal = () => ordersManager.showExportModal();
 window.closeExportModal = () => ordersManager.closeExportModal();
 window.startDataExport = () => ordersManager.startDataExport();
 window.cleanupOldExports = () => ordersManager.cleanupOldExports();
-window.orderManager = ordersManager; // 提供全局访问
 
-console.log('订单管理系统优化版本已加载'); 
+// 新增的高级筛选功能
+window.showAdvancedFilters = () => ordersManager.showAdvancedFilters();
+window.applyAdvancedFilters = () => ordersManager.applyAdvancedFilters();
+window.clearAdvancedFilters = () => ordersManager.clearAdvancedFilters();
+window.refreshOrdersData = () => ordersManager.refreshOrdersData();
+
+console.log('订单管理系统优化版本已加载，全局访问已设置'); 

@@ -619,7 +619,7 @@
         <!-- 测试发送 -->
         <div id="test" class="tab-content">
             <div class="card">
-                <h3>📤 发送测试消息</h3>
+                <h3>📤 发送信息</h3>
                 <form onsubmit="sendTestMessage(event)">
                     <div class="form-row">
                         <div class="form-group">
@@ -1783,9 +1783,10 @@
         // 更新下拉选择框
         function updateSelects() {
             // 更新商家选择框
-            const merchantSelects = document.querySelectorAll('#buttonMerchant');
+            const merchantSelects = document.querySelectorAll('#buttonMerchant, #testMerchant');
             merchantSelects.forEach(select => {
-                select.innerHTML = '<option value="">选择商家</option>' + 
+                const defaultOption = select.id === 'testMerchant' ? '<option value="">请选择商家</option>' : '<option value="">选择商家</option>';
+                select.innerHTML = defaultOption + 
                     merchants.map(m => `<option value="${m.id}">${m.teacher_name || '未知商家'}</option>`).join('');
             });
 
@@ -2041,13 +2042,16 @@
             const select = document.getElementById('testMerchant');
             select.innerHTML = '<option value="">请选择商家</option>';
             
+            console.log('🔍 当前商家数据:', merchants);
+            
             merchants.forEach(merchant => {
-                // 检查绑定步骤是否完成（bind_step = 5）且状态为活跃
-                if (merchant.bind_step === 5 && merchant.status === 'active') {
+                // 放宽筛选条件：只要有商家名称就可以选择
+                if (merchant.teacher_name) {
                     const option = document.createElement('option');
                     option.value = merchant.id;
-                    option.textContent = `${merchant.teacher_name || '未知姓名'} - ${merchant.region_name || '未知地区'}`;
+                    option.textContent = `${merchant.teacher_name} - ${merchant.region_name || '未知地区'}`;
                     select.appendChild(option);
+                    console.log(`✅ 添加商家选项: ${merchant.teacher_name} (ID: ${merchant.id})`);
                 }
             });
             
@@ -2055,9 +2059,12 @@
             if (select.children.length === 1) {
                 const option = document.createElement('option');
                 option.value = '';
-                option.textContent = '暂无可用商家（需要完成绑定且状态为活跃）';
+                option.textContent = '暂无商家数据，请检查商家管理页面';
                 option.disabled = true;
                 select.appendChild(option);
+                console.log('⚠️ 没有找到可用商家');
+            } else {
+                console.log(`✅ 共添加了 ${select.children.length - 1} 个商家选项`);
             }
             
             select.onchange = handleMerchantChange;

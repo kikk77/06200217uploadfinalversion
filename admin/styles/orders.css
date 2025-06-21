@@ -186,38 +186,176 @@
     border-radius: 8px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    animation: slideDown 0.3s ease-out;
 }
 
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 筛选器行样式 */
 .filter-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem;
+    gap: 1rem;
     margin-bottom: 1rem;
+    align-items: flex-start;
 }
 
 .filter-item {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 0.5rem;
+    min-width: 200px;
+    flex: 1;
 }
 
 .filter-item label {
     font-weight: 500;
     color: #495057;
     white-space: nowrap;
-}
-
-.filter-item select,
-.filter-item input {
-    padding: 0.375rem 0.75rem;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
     font-size: 0.875rem;
 }
 
-.filter-actions {
+.filter-item input,
+.filter-item select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+}
+
+.filter-item input:focus,
+.filter-item select:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.filter-item input[type="number"] {
+    width: 100px;
+}
+
+.filter-item input[type="date"] {
+    width: 150px;
+}
+
+/* 价格范围和日期范围输入组 */
+.price-range-inputs,
+.date-range-inputs {
     display: flex;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.price-range-inputs span,
+.date-range-inputs span {
+    color: #6c757d;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+/* 筛选操作按钮区域 */
+.filter-actions-item {
+    display: flex;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: auto;
+    flex: none;
+}
+
+.filter-actions-item .btn {
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* 筛选状态行 */
+.filter-status-row {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.filter-status {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    background: #f8f9fa;
+}
+
+.filter-applying {
+    color: #0d6efd;
+    background: #e7f3ff;
+}
+
+.filter-active {
+    color: #198754;
+    background: #e8f5e8;
+}
+
+.filter-count {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.filter-list {
+    font-size: 0.8rem;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.filter-none {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .filter-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .filter-item {
+        min-width: 100%;
+        flex: none;
+    }
+    
+    .filter-item label {
+        margin-bottom: 0.25rem;
+    }
+    
+    .filter-actions-item {
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+    
+    .filter-status {
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+    }
 }
 
 /* 表格样式 */
@@ -1006,8 +1144,6 @@
     transform: scale(1.1);
 }
 
-
-
 /* 简化的卡片布局 */
 .detail-card {
     background: #f8f9fa;
@@ -1534,4 +1670,39 @@
         width: 100%;
         justify-content: center;
     }
+}
+
+/* 订单行样式 */
+.order-row {
+    transition: background-color 0.2s ease;
+}
+
+.order-row:hover {
+    background-color: #f8f9fa;
+}
+
+.order-row td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* 按钮样式 */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
 } 
