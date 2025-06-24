@@ -69,6 +69,22 @@ console.log('🎯 启动主应用...');
 async function startApp() {
     // 等待权限修复完成
     await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // 初始化数据库表结构
+    console.log('🔧 初始化数据库表结构...');
+    try {
+        const { initializeDatabase } = require('./init-database.js');
+        const success = initializeDatabase();
+        if (success) {
+            console.log('✅ 数据库初始化成功');
+        } else {
+            console.log('⚠️ 数据库初始化失败，但继续启动');
+        }
+    } catch (error) {
+        console.log('⚠️ 数据库初始化异常:', error.message);
+        console.log('📋 继续启动应用...');
+    }
+    
     require('../app.js');
 }
 
