@@ -654,17 +654,14 @@ class ApiService {
     // 获取用户评价状态
     getUserEvaluationStatus(bookingSessionId) {
         try {
-            const evaluation = db.prepare(`
-                SELECT status, detailed_scores, overall_score FROM evaluations 
-                WHERE booking_session_id = ? AND evaluator_type = 'user'
+            // 由于evaluations表为空，直接通过orders表的booking_session_id查询
+            const order = db.prepare(`
+                SELECT user_evaluation 
+                FROM orders 
+                WHERE booking_session_id = ?
             `).get(bookingSessionId);
             
-            // 用户评价：status为completed即视为已完成评价
-            // 用户评价主要通过12项详细评分，不依赖overall_score
-            if (evaluation && evaluation.status === 'completed') {
-                return 'completed';
-            }
-            return 'pending';
+            return (order && order.user_evaluation) ? 'completed' : 'pending';
         } catch (error) {
             return 'pending';
         }
@@ -673,14 +670,14 @@ class ApiService {
     // 获取商家评价状态
     getMerchantEvaluationStatus(bookingSessionId) {
         try {
-            const evaluation = db.prepare(`
-                SELECT status, detailed_scores, overall_score FROM evaluations 
-                WHERE booking_session_id = ? AND evaluator_type = 'merchant'
+            // 由于evaluations表为空，直接通过orders表的booking_session_id查询
+            const order = db.prepare(`
+                SELECT merchant_evaluation 
+                FROM orders 
+                WHERE booking_session_id = ?
             `).get(bookingSessionId);
             
-            // 商家评价：status为completed即视为已完成评价
-            // 包括简单评价（选择"不了👋"）和详细评价
-            return evaluation && evaluation.status === 'completed' ? 'completed' : 'pending';
+            return (order && order.merchant_evaluation) ? 'completed' : 'pending';
         } catch (error) {
             return 'pending';
         }
@@ -739,18 +736,41 @@ class ApiService {
                 realStatus = 'cancelled';
             }
 
-            // 获取评价数据
-            const userEvaluation = db.prepare(`
-                SELECT overall_score, detailed_scores, comments as text_comment, status, created_at
-                FROM evaluations 
-                WHERE booking_session_id = ? AND evaluator_type = 'user'
-            `).get(order.booking_session_id);
-
-            const merchantEvaluation = db.prepare(`
-                SELECT overall_score, detailed_scores, comments as text_comment, status, created_at
-                FROM evaluations 
-                WHERE booking_session_id = ? AND evaluator_type = 'merchant'
-            `).get(order.booking_session_id);
+            // 获取评价数据 - 直接从orders表获取
+            let userEvaluation = null;
+            let merchantEvaluation = null;
+            
+            // 解析用户评价
+            if (order.user_evaluation) {
+                try {
+                    const parsed = JSON.parse(order.user_evaluation);
+                    userEvaluation = {
+                        overall_score: parsed.overall_score || null,
+                        detailed_scores: JSON.stringify(parsed.scores || {}),
+                        text_comment: parsed.comments || parsed.textComment || null,
+                        status: 'completed',
+                        created_at: parsed.created_at || null
+                    };
+                } catch (e) {
+                    console.error('解析用户评价失败:', e);
+                }
+            }
+            
+            // 解析商家评价
+            if (order.merchant_evaluation) {
+                try {
+                    const parsed = JSON.parse(order.merchant_evaluation);
+                    merchantEvaluation = {
+                        overall_score: parsed.overall_score || null,
+                        detailed_scores: JSON.stringify(parsed.scores || {}),
+                        text_comment: parsed.comments || parsed.textComment || null,
+                        status: 'completed',
+                        created_at: parsed.created_at || null
+                    };
+                } catch (e) {
+                    console.error('解析商家评价失败:', e);
+                }
+            }
 
             // 时间处理
             const formatTime = (timestamp) => {
@@ -1428,66 +1448,26 @@ class ApiService {
             params.push(filters.maxPrice, filters.maxPrice, filters.maxPrice, filters.maxPrice);
         }
 
-        // 评价状态筛选 - 由于production环境evaluations表为空，暂时简化
+        // 评价状态筛选 - 基于orders表中的评价字段
         if (filters.evaluationStatus) {
             switch (filters.evaluationStatus) {
                 case 'user_completed':
-                    conditions.push(`EXISTS (
-                        SELECT 1 FROM evaluations e 
-                        WHERE e.booking_session_id = o.booking_session_id 
-                        AND e.evaluator_type = 'user' 
-                        AND e.status = 'completed'
-                    )`);
+                    conditions.push('o.user_evaluation IS NOT NULL');
                     break;
                 case 'user_pending':
-                    conditions.push(`NOT EXISTS (
-                        SELECT 1 FROM evaluations e 
-                        WHERE e.booking_session_id = o.booking_session_id 
-                        AND e.evaluator_type = 'user' 
-                        AND e.status = 'completed'
-                    ) OR o.booking_session_id IS NULL`);
+                    conditions.push('o.user_evaluation IS NULL');
                     break;
                 case 'merchant_completed':
-                    conditions.push(`EXISTS (
-                        SELECT 1 FROM evaluations e 
-                        WHERE e.booking_session_id = o.booking_session_id 
-                        AND e.evaluator_type = 'merchant' 
-                        AND e.status = 'completed'
-                    )`);
+                    conditions.push('o.merchant_evaluation IS NOT NULL');
                     break;
                 case 'merchant_pending':
-                    conditions.push(`NOT EXISTS (
-                        SELECT 1 FROM evaluations e 
-                        WHERE e.booking_session_id = o.booking_session_id 
-                        AND e.evaluator_type = 'merchant' 
-                        AND e.status = 'completed'
-                    ) OR o.booking_session_id IS NULL`);
+                    conditions.push('o.merchant_evaluation IS NULL');
                     break;
                 case 'all_completed':
-                    conditions.push(`EXISTS (
-                        SELECT 1 FROM evaluations e 
-                        WHERE e.booking_session_id = o.booking_session_id 
-                        AND e.evaluator_type = 'user' 
-                        AND e.status = 'completed'
-                    ) AND EXISTS (
-                        SELECT 1 FROM evaluations e 
-                        WHERE e.booking_session_id = o.booking_session_id 
-                        AND e.evaluator_type = 'merchant' 
-                        AND e.status = 'completed'
-                    )`);
+                    conditions.push('o.user_evaluation IS NOT NULL AND o.merchant_evaluation IS NOT NULL');
                     break;
                 case 'none_completed':
-                    conditions.push(`(NOT EXISTS (
-                        SELECT 1 FROM evaluations e 
-                        WHERE e.booking_session_id = o.booking_session_id 
-                        AND e.evaluator_type = 'user' 
-                        AND e.status = 'completed'
-                    ) AND NOT EXISTS (
-                        SELECT 1 FROM evaluations e 
-                        WHERE e.booking_session_id = o.booking_session_id 
-                        AND e.evaluator_type = 'merchant' 
-                        AND e.status = 'completed'
-                    )) OR o.booking_session_id IS NULL`);
+                    conditions.push('o.user_evaluation IS NULL AND o.merchant_evaluation IS NULL');
                     break;
             }
         }
