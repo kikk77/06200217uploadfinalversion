@@ -52,6 +52,7 @@ class DatabaseSchema {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
                 sort_order INTEGER DEFAULT 0,
+                active INTEGER DEFAULT 1,
                 created_at INTEGER DEFAULT (strftime('%s', 'now')),
                 updated_at INTEGER DEFAULT (strftime('%s', 'now'))
             )
