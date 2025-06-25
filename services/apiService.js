@@ -659,11 +659,10 @@ class ApiService {
                 WHERE booking_session_id = ? AND evaluator_type = 'user'
             `).get(bookingSessionId);
             
-            // 必须状态为completed且有实际评分数据
+            // 用户评价：status为completed即视为已完成评价
+            // 用户评价主要通过12项详细评分，不依赖overall_score
             if (evaluation && evaluation.status === 'completed') {
-                const hasDetailedScores = evaluation.detailed_scores && evaluation.detailed_scores !== 'null';
-                const hasOverallScore = evaluation.overall_score !== null;
-                return (hasDetailedScores || hasOverallScore) ? 'completed' : 'pending';
+                return 'completed';
             }
             return 'pending';
         } catch (error) {

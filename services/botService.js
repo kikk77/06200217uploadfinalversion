@@ -2769,7 +2769,8 @@ async function handleUserEvaluationConfirm(userId, data, query) {
             // 清理内存状态
             userEvaluationStates.delete(userId);
             
-            // 直接调用播报选择函数
+            // 确保进入播报选择阶段
+            console.log(`✅ 用户评价完成，进入播报选择阶段: userId=${userId}, evaluationId=${evaluationId}`);
             await showBroadcastChoice(userId, evaluationId);
         }
         
@@ -2943,7 +2944,8 @@ async function handleUserTextCommentInput(userId, text, evalSession) {
             console.log(`📝 文字评价已更新到数据库: "${text}"`);
         }
         
-        // 直接进入播报选择阶段
+        // 确保进入播报选择阶段
+        console.log(`✅ 用户文字评价完成，进入播报选择阶段: userId=${userId}, evaluationId=${evaluationId}`);
         await showBroadcastChoice(userId, evaluationId);
         
         console.log(`=== 用户文字评价输入调试结束 ===`);
@@ -2960,9 +2962,9 @@ async function handleUserTextComment(userId, data, query) {
         if (data.startsWith('user_text_skip_')) {
             // 跳过文字评价，进入播报选择
             const evaluationId = data.replace('user_text_skip_', '');
-            console.log(`用户${userId}跳过文字评价，直接进入播报选择`);
+            console.log(`✅ 用户${userId}跳过文字评价，进入播报选择阶段: evaluationId=${evaluationId}`);
             
-            // 直接进入播报选择阶段
+            // 确保进入播报选择阶段
             await showBroadcastChoice(userId, evaluationId);
             
         } else if (data.startsWith('user_text_submit_')) {
@@ -2979,7 +2981,8 @@ async function handleUserTextComment(userId, data, query) {
                 dbOperations.updateEvaluation(evaluationId, null, userState.scores, userState.scores.textComment, 'completed');
                 console.log(`📝 文字评价已更新到数据库: "${userState.scores.textComment}"`);
                 
-                // 直接进入播报选择阶段
+                // 确保进入播报选择阶段
+                console.log(`✅ 用户${userId}提交文字报告完成，进入播报选择阶段: evaluationId=${evaluationId}`);
                 await showBroadcastChoice(userId, evaluationId);
             } else {
                 // 用户还没有输入文字内容
