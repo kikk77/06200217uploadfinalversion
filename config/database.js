@@ -203,6 +203,7 @@ class DatabaseManager {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 sort_order INTEGER DEFAULT 0,
+                active INTEGER DEFAULT 1,
                 created_at INTEGER DEFAULT (strftime('%s', 'now'))
             );
         `);
@@ -417,6 +418,9 @@ class DatabaseManager {
     migrateDatabase(currentVersion) {
         console.log(`开始数据库迁移，当前版本: ${currentVersion}`);
         
+        // 检查是否需要添加新字段到regions表
+        this.migrateRegionsTable();
+        
         // 检查是否需要添加新字段到merchants表
         this.migrateMerchantsTable();
         
@@ -430,8 +434,27 @@ class DatabaseManager {
         this.repairDataConsistency();
         
         // 更新到最新版本
-        this.setDbVersion('1.1.2'); // 升级版本号，强制触发image_url字段迁移
+        this.setDbVersion('1.1.3'); // 升级版本号，强制触发active字段迁移
         console.log('数据库迁移完成');
+    }
+
+    migrateRegionsTable() {
+        try {
+            // 检查regions表是否存在active字段
+            const tableInfo = this.db.prepare("PRAGMA table_info(regions)").all();
+            const columnNames = tableInfo.map(col => col.name);
+            
+            if (!columnNames.includes('active')) {
+                console.log('添加字段 active 到 regions 表');
+                this.db.exec('ALTER TABLE regions ADD COLUMN active INTEGER DEFAULT 1');
+                
+                // 更新所有现有记录的active字段为1
+                const updateResult = this.db.prepare('UPDATE regions SET active = 1 WHERE active IS NULL').run();
+                console.log(`✅ 已添加active字段并更新了 ${updateResult.changes} 条记录`);
+            }
+        } catch (error) {
+            console.error('迁移regions表失败:', error);
+        }
     }
 
     migrateMerchantsTable() {
