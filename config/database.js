@@ -11,31 +11,26 @@ class DatabaseManager {
         const isStaging = nodeEnv === 'staging';
         
         // 根据环境选择数据目录和数据库文件名
-        // 生产环境优先使用Volume，如果权限有问题则使用应用目录
+        // 生产环境和staging环境都优先使用Volume
         let dataDir;
         if (isProduction || isStaging) {
-            const volumeDataDir = '/app/data';
-            const localDataDir = path.join(__dirname, '..', 'data'); // staging使用本地data目录
+            // Railway Volume路径检查
+            const volumeDataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || '/app/data';
+            const localDataDir = path.join(__dirname, '..', 'data');
             
-            // staging环境直接使用本地data目录，不使用Volume
-            if (isStaging) {
-                dataDir = localDataDir;
-                console.log(`📁 STAGING环境使用本地数据目录: ${dataDir}`);
-            } else {
-                // production环境才检查Volume权限
+                        // 优先尝试使用Volume，无论是production还是staging
             try {
                 if (fs.existsSync(volumeDataDir)) {
                     fs.accessSync(volumeDataDir, fs.constants.W_OK);
                     dataDir = volumeDataDir; // Volume可用
-                    console.log(`📁 使用Volume数据目录: ${dataDir}`);
+                    console.log(`📁 ${isStaging ? 'STAGING' : 'PRODUCTION'}环境使用Volume数据目录: ${dataDir}`);
                 } else {
                     throw new Error('Volume目录不存在');
                 }
             } catch (error) {
-                console.log(`⚠️ Volume权限问题，使用应用目录: ${error.message}`);
-                    dataDir = path.join(__dirname, '..', 'app-data'); // 使用应用目录
-                console.log(`📁 使用应用数据目录: ${dataDir}`);
-                }
+                console.log(`⚠️ Volume权限问题，使用本地目录: ${error.message}`);
+                dataDir = localDataDir; // 使用本地目录
+                console.log(`📁 使用本地数据目录: ${dataDir}`);
             }
         } else {
             dataDir = path.join(__dirname, '..', 'data');

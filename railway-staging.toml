@@ -19,19 +19,20 @@ watchPatterns = ["app.js", "services/**", "models/**", "config/**"]
 buildCommand = "npm install"
 
 [deploy]
-startCommand = "npm run railway"
-healthcheckPath = "/health"
-healthcheckTimeout = 30
+startCommand = "node scripts/railway-start.js"
+healthcheckPath = "/"
+healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
-# Volume配置 - 测试环境独立数据持久化
+# Volume配置 - 确保数据持久化
 [[deploy.volumes]]
 mountPath = "/app/data"
-name = "telegram-bot-staging-data"  # 独立的staging volume
+name = "staging-data-volume"
 
 [env]
 NODE_ENV = "staging"
+RAILWAY_ENVIRONMENT_NAME = "staging"
 PORT = "3000"
 
 [[ports]]

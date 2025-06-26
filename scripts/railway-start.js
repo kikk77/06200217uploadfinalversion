@@ -70,15 +70,21 @@ async function startApp() {
     // 等待权限修复完成
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // 初始化数据库表结构
-    console.log('🔧 初始化数据库表结构...');
+    // 初始化数据库表结构和示例数据
+    console.log('🔧 初始化数据库表结构和示例数据...');
     try {
+        // 先尝试基础表结构初始化
         const { initializeDatabase } = require('./init-database.js');
-        const success = initializeDatabase();
-        if (success) {
-            console.log('✅ 数据库初始化成功');
+        const basicSuccess = initializeDatabase();
+        
+        // 再尝试staging数据初始化
+        const { initializeDatabase: initStagingData } = require('./init-staging-data.js');
+        const stagingSuccess = initStagingData();
+        
+        if (basicSuccess && stagingSuccess) {
+            console.log('✅ 数据库和示例数据初始化成功');
         } else {
-            console.log('⚠️ 数据库初始化失败，但继续启动');
+            console.log('⚠️ 数据库初始化部分失败，但继续启动');
         }
     } catch (error) {
         console.log('⚠️ 数据库初始化异常:', error.message);
